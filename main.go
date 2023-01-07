@@ -18,7 +18,10 @@ import (
 `
 var endpointStr = `func make%sEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(*%sRequest)
+		req,ok := request.(*%sRequest)
+		if !ok || req == nil{
+			return nil,errors.ErrInput.WithMsg("makeErr")
+		}
 		res, err := s.%s(ctx, req)
 		return res, err
 	}
