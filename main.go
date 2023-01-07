@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"strings"
 )
@@ -28,6 +27,7 @@ var endpointStr = `func make%sEndpoint(s Service) endpoint.Endpoint {
 }`
 
 func main() {
+	fmt.Println(os.Args)
 	if len(os.Args) != 3 {
 		return
 	}
@@ -40,14 +40,14 @@ func main() {
 
 	rf, err := os.Open(os.Args[1] + "/" + os.Args[2])
 	if err != nil {
-		log.Println(err)
+		fmt.Println(err)
 		return
 	}
 	defer rf.Close()
 
 	wf, err := os.Open(os.Args[1] + "/endpoint.go")
 	if err != nil {
-		log.Println(err)
+		fmt.Println(err)
 		return
 	}
 	defer wf.Close()
