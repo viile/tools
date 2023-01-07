@@ -12,19 +12,49 @@ var startStr = `package %s
 
 import (
 	"context"
-	"github.com/go-kit/kit/endpoint"
+	"net/http"
+
+	kit "github.com/go-kit/kit/endpoint"
+
+	"github.com/viile/server/components/endpoint"
+	"github.com/viile/server/components/errors"
 )
 `
-var endpointStr = `func make%sEndpoint(s Service) endpoint.Endpoint {
+var endpointStr = `func make%sEndpoint(s Service) kit.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req,ok := request.(*%sRequest)
+		req,ok := request.(%s)
 		if !ok || req == nil{
-			return nil,errors.ErrInput.WithMsg("makeErr")
+			return nil,errors.ErrParser
 		}
 		res, err := s.%s(ctx, req)
 		return res, err
 	}
-}`
+}
+`
+
+var decodeStr = `func decode%sRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	var err error
+	req := &%s{}
+	if err = endpoint.Decodefunc(ctx, r, req); err != nil {
+		return nil, errors.ErrInput.With(err)
+	}
+
+	if err = req.Parser(ctx); err != nil {
+		return nil, errors.ErrInput.With(err)
+	}
+
+	return req, nil
+}
+`
+
+func getEndpoint(name, req string) string {
+	name = strings.Trim(name, "\t")
+	name = strings.Trim(name, " ")
+	req = strings.Trim(req, "\t")
+	req = strings.Trim(req, " ")
+	rreq := strings.Trim(req, "*")
+	return fmt.Sprintf(endpointStr, name, req, name) + fmt.Sprintf(decodeStr, name, rreq)
+}
 
 func main() {
 	fmt.Println(os.Args)
@@ -45,7 +75,7 @@ func main() {
 	}
 	defer rf.Close()
 
-	wf, err := os.Open(os.Args[1] + "/endpoint.go")
+	wf, err := os.Create(os.Args[1] + "/endpoint.go")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -65,18 +95,27 @@ func main() {
 		if !begin {
 			if strings.Contains(string(a), "interface") {
 				begin = true
+				w.WriteString(fmt.Sprintf(startStr, pkName))
 			}
-			w.WriteString(fmt.Sprintf(startStr, pkName))
 		} else {
 			// 结束
 			if strings.Contains(string(a), "}") {
 				return
 			}
-			ts := strings.Split(strings.TrimLeft(string(a), " "), "(")
+			ts := strings.Split(string(a), "(")
 			if len(ts) <= 0 {
 				continue
 			}
-			w.WriteString(fmt.Sprintf(endpointStr, ts[0]))
+			t1 := strings.Split(string(a), ")")
+			if len(t1) <= 0 {
+				continue
+			}
+			t2 := strings.Split(t1[0], " ")
+			if len(t2) <= 0 {
+				continue
+			}
+			fmt.Println(string(a))
+			w.WriteString(getEndpoint(ts[0], t2[len(t2)-1]))
 		}
 
 	}
