@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -102,16 +103,22 @@ func main() {
 			if strings.Contains(string(a), "}") {
 				return
 			}
+
+			if !regexp.MustCompile(`^\w+\([\w\s\*,\.]+\)\s+\([\w\s\*,\.]+\)$`).Match(a) {
+				fmt.Println("NotRegexp ", string(a))
+				continue
+			}
+
 			ts := strings.Split(string(a), "(")
-			if len(ts) <= 0 {
+			if len(ts) <= 1 {
 				continue
 			}
 			t1 := strings.Split(string(a), ")")
-			if len(t1) <= 0 {
+			if len(t1) <= 1 {
 				continue
 			}
 			t2 := strings.Split(t1[0], " ")
-			if len(t2) <= 0 {
+			if len(t2) <= 1 {
 				continue
 			}
 			fmt.Println(string(a))
