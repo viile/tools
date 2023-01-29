@@ -103,17 +103,17 @@ func main() {
 			if strings.Contains(string(a), "}") {
 				return
 			}
-
-			if !regexp.MustCompile(`^\w+\([\w\s\*,\.]+\)\s+\([\w\s\*,\.]+\)$`).Match(a) {
+			line := strings.Trim(strings.Trim(string(a), "\t"), " ")
+			if !regexp.MustCompile(`^\w+\([\w\s\*,\.]+\)\s+\([\w\s\*,\.]+\)$`).MatchString(line) {
 				fmt.Println("NotRegexp ", string(a))
 				continue
 			}
 
-			ts := strings.Split(string(a), "(")
+			ts := strings.Split(line, "(")
 			if len(ts) <= 1 {
 				continue
 			}
-			t1 := strings.Split(string(a), ")")
+			t1 := strings.Split(line, ")")
 			if len(t1) <= 1 {
 				continue
 			}
@@ -121,7 +121,7 @@ func main() {
 			if len(t2) <= 1 {
 				continue
 			}
-			fmt.Println(string(a))
+			fmt.Println(line)
 			w.WriteString(getEndpoint(ts[0], t2[len(t2)-1]))
 		}
 
